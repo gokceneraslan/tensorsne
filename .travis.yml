@@ -1,0 +1,22 @@
+language: python
+cache: pip
+python:
+  - 3.5
+  - 3.6
+
+# Setup anaconda
+before_install:
+  - sudo apt-get install -y libopenblas-dev liblapack-dev python3-dev
+
+# Install packages
+install:
+  - pip install numpy scipy pandas pytest tensorflow keras pybind11
+  - pip install -r requirements.txt
+  - python setup.py build
+  - python setup.py install
+
+# Run test
+script:
+  - cd tests
+  - pytest test.py -v
+

@@ -1,0 +1,5 @@
+Cython>=0.19.1
+numpy>=1.7.1
+scipy>=0.12.0
+scikit-learn
+nmslib>=1.6
