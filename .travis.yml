@@ -1,12 +1,29 @@
 language: python
-cache: pip
-python:
-  - 3.5
-  - 3.6
 
-# Setup anaconda
+matrix:
+    include:
+        - os: linux
+          sudo: required
+          python: 3.5
+          cache: pip
+        - os: linux
+          sudo: required
+          python: 3.6
+          cache: pip
+        # Use generic language for osx
+        # See https://github.com/travis-ci/travis-ci/issues/2312
+        - os: osx
+          language: generic
+          cache:
+            directories:
+              - /Users/travis/Library/Caches/pip
+          before_install:
+            - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
+            - bash miniconda.sh -b -p $HOME/miniconda
+            - export PATH="$HOME/miniconda/bin:$PATH"
+
 before_install:
-  - sudo apt-get install -y libopenblas-dev liblapack-dev python3-dev
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libopenblas-dev liblapack-dev python3-dev ; fi
 
 # Install packages
 install:
