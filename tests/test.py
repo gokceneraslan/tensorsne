@@ -91,7 +91,7 @@ def test_kl():
 
 
 def test_tensorflow():
-    from tensorsne.tensorflow import tsne_op, tsne_sparse_op
+    from tensorsne.tensorflow import tsne_op
     import tensorflow as tf
 
     N = 1000
@@ -131,7 +131,7 @@ def test_tensorflow():
         Yc = tf.constant(Y)
         tf.global_variables_initializer().run()
 
-        yop = tsne_sparse_op(P.indptr, P.indices, P.data, Yc)
+        yop = tsne_op(P, Yc)
         yop_gr = tf.gradients(yop, Yc)[0]
 
         kl2 = yop.eval()
@@ -142,13 +142,10 @@ def test_tensorflow():
 
     # test tf ops via GD
     with tf.Session() as sess:
-        rows_var = tf.constant(P.indptr)
-        cols_var = tf.constant(P.indices)
-        data_var = tf.constant(P.data)
         Y_var = tf.Variable(Y)
 
         opt = tf.train.MomentumOptimizer(learning_rate=200., momentum=0.8)
-        loss = tsne_sparse_op(rows_var, cols_var, data_var, Y_var)
+        loss = tsne_op(P, Y_var)
         update = opt.minimize(loss, var_list=[Y_var])
 
         tf.global_variables_initializer().run()
