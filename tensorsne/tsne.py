@@ -4,6 +4,7 @@ from .x2p import x2p
 import time
 import tensorflow as tf
 import numpy as np
+import scipy as sp
 
 from sklearn.decomposition import PCA
 
@@ -24,11 +25,9 @@ def tsne(X,
          final_momentum=0.8,
          seed=42):
 
-    np.random.seed(seed)
-    result = {'loss': []}
-
     X -= X.mean(axis=0)
     N = X.shape[0]
+    result = {}
 
     if pca_dim is not None:
         result['PCA'] = PCA(n_components=pca_dim)
@@ -38,15 +37,21 @@ def tsne(X,
     result['P'] = P
     result['exag_iter'] = exag_iter
     result['print_iter'] = print_iter
+    result['loss'] = []
 
+    tf.reset_default_graph()
+    tf.set_random_seed(seed)
     with tf.Session() as sess:
         mom_var, exag_var = tf.Variable(init_momentum), tf.Variable(exag)
-        Y = tf.Variable(np.random.normal(0, 1e-4, (N, dim)).astype(np.float32))
-
+        Y = tf.Variable(tf.random_normal((N, dim), stddev=1e-4))
         opt = tf.train.MomentumOptimizer(learning_rate=lr, momentum=mom_var)
-        loss = tsne_op((P.indptr, P.indices, P.data*exag_var), Y)
-        update = opt.minimize(loss, var_list=[Y])
 
+        if isinstance(P, sp.sparse.csr_matrix):
+            loss = tsne_op((P.indptr, P.indices, P.data*exag_var), Y)
+        else:
+            loss = tsne_op(P*exag_var, Y)
+
+        update = opt.minimize(loss, var_list=[Y])
         tf.global_variables_initializer().run()
 
         t = time.time()
