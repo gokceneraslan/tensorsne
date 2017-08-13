@@ -2,6 +2,7 @@
 
 from tensorsne import x2p, KL, gradKL, KLsparse, gradKLsparse
 from tensorsne.knn import knn
+from tensorsne.tsne import tsne
 
 import numpy as np
 from pytest import approx
@@ -27,11 +28,13 @@ def get_mnist(n_train=5000, n_test=500, pca=True, d=50):
     X_train = X_train[:n_train] - X_train[:n_train].mean(axis=0)
     X_test = X_test[:n_test] - X_test[:n_test].mean(axis=0)
 
-    pcfit = PCA(n_components=d)
+    if pca:
+        pcfit = PCA(n_components=d)
 
-    X_train = pcfit.fit_transform(X_train)
+        X_train = pcfit.fit_transform(X_train)
+        X_test = pcfit.transform(X_test)
+
     y_train = y_train[:n_train]
-    X_test = pcfit.transform(X_test)
     y_test = y_test[:n_test]
 
     return X_train, y_train, X_test, y_test
@@ -158,4 +161,17 @@ def test_tensorflow():
     kl2 = KLsparse(P.indptr, P.indices, P.data, Y_gd)
 
     assert kl2 < kl1
+
+
+def test_tsne():
+    N = 100
+    N_test = 1
+    perplexity = 30
+
+    X, _, _, _ = get_mnist(N, N_test, False)
+    res = tsne(X, dim=2, perplexity=perplexity, verbose=True)
+
+    assert res['loss'][-1] < 0.5
+    assert res['Y'].shape[0] == N
+    assert res['Y'].shape[1] == 2
 
