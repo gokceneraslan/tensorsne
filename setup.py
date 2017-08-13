@@ -27,7 +27,7 @@ if sys.platform == 'darwin':
         extra_compile_args=['-I/System/Library/Frameworks/vecLib.framework/Headers']
 
     ext_modules = [Extension(name='tensorsne._cpp',
-                   sources=['bhtsnecpp/sptree.cpp', 'bhtsnecpp/tsne.cpp', 'tensorsense/_cpp.pyx'],
+                   sources=['bhtsnecpp/sptree.cpp', 'bhtsnecpp/tsne.cpp', 'tensorsne/_cpp.pyx'],
                    include_dirs=[numpy.get_include(), 'bhtsnecpp/'],
                    extra_compile_args=extra_compile_args + ['-ffast-math', '-O3'],
                    extra_link_args=['-Wl,-framework', '-Wl,Accelerate', '-lcblas'],
