@@ -23,6 +23,7 @@ def tsne(X,
          lr=200.,
          init_momentum=0.5,
          final_momentum=0.8,
+         save_snapshots=False,
          seed=42):
 
     X -= X.mean(axis=0)
@@ -38,6 +39,8 @@ def tsne(X,
     result['exag_iter'] = exag_iter
     result['print_iter'] = print_iter
     result['loss'] = []
+    if save_snapshots:
+        result['snapshots'] = []
 
     tf.reset_default_graph()
     tf.set_random_seed(seed)
@@ -68,6 +71,8 @@ def tsne(X,
                 if verbose:
                     print('Error: %f (%d iter. in %f seconds)' % (kl, print_iter, (time.time()-t)))
                     t = time.time()
+                if save_snapshots:
+                    result['snapshots'].append(Y.eval())
         Y_final = Y.eval()
 
     result['Y'] = Y_final

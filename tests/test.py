@@ -169,7 +169,8 @@ def test_tsne():
     perplexity = 30
 
     X, _, _, _ = get_mnist(N, N_test, False)
-    res = tsne(X, dim=2, perplexity=perplexity, verbose=True)
+    res = tsne(X, dim=2, perplexity=perplexity, verbose=True,
+               save_snapshots=True)
 
     assert res['loss'][-1] < 0.5
     assert res['Y'].shape[0] == N
