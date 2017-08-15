@@ -3,6 +3,8 @@ from .x2p import x2p
 
 import time
 import tensorflow as tf
+from tensorflow.contrib.opt import ScipyOptimizerInterface
+
 import numpy as np
 import scipy as sp
 
@@ -16,19 +18,23 @@ def tsne(X,
          knn_method='approx',
          pca_dim=50,
          exag = 12.,
-         exag_iter=300,
-         max_iter=2000,
+         exag_iter=250,
+         max_iter=1000,
          verbose=False,
-         print_iter=100,
+         print_iter=50,
          lr=200.,
          init_momentum=0.5,
          final_momentum=0.8,
          save_snapshots=False,
+         optimizer='momentum',
+         tf_optimizer='AdamOptimizer',
          seed=42):
 
     X -= X.mean(axis=0)
     N = X.shape[0]
     result = {}
+
+    assert optimizer in ('momentum', 'tensorflow', 'bfgs'), 'Available options: momentum, tensorflow and bfgs'
 
     if pca_dim is not None:
         result['PCA'] = PCA(n_components=pca_dim)
@@ -44,36 +50,85 @@ def tsne(X,
 
     tf.reset_default_graph()
     tf.set_random_seed(seed)
+
     with tf.Session() as sess:
-        mom_var, exag_var = tf.Variable(init_momentum), tf.Variable(exag)
-        Y = tf.Variable(tf.random_normal((N, dim), stddev=1e-4))
-        opt = tf.train.MomentumOptimizer(learning_rate=lr, momentum=mom_var)
+        step = 1
+
+        def step_callback(Y_var):
+            nonlocal step
+            if step % print_iter == 0:
+                print('Step: %d, error: %f' %(step, result['loss'][-1]))
+                if save_snapshots:
+                    result['snapshots'].append(Y_var.reshape((N, dim)))
+            if step == exag_iter:
+                sess.run(tf.assign(exag_var, 1.))
+
+            #zero mean
+            sess.run(tf.assign(Y, Y-tf.reduce_mean(Y, axis=0)))
+            step += 1
+
+        def loss_callback(err):
+            result['loss'].append(err)
+
+        stddev = 1 if optimizer == 'bfgs' else 0.01
+        Y = tf.Variable(tf.random_normal((N, dim), stddev=stddev))
+        exag_var = tf.Variable(exag)
 
         if isinstance(P, sp.sparse.csr_matrix):
             loss = tsne_op((P.indptr, P.indices, P.data*exag_var), Y)
         else:
             loss = tsne_op(P*exag_var, Y)
 
-        update = opt.minimize(loss, var_list=[Y])
-        tf.global_variables_initializer().run()
+        if optimizer == 'bfgs':
+            opt = ScipyOptimizerInterface(loss, var_list=[Y], method='L-BFGS-B',
+                                          options={'eps': 1., 'gtol': 1e-16,
+                                                   'ftol': 1e-16, 'disp': False,
+                                                   'maxiter': max_iter})
+            tf.global_variables_initializer().run()
+            opt.minimize(sess, fetches=[loss],
+                         loss_callback=loss_callback, step_callback=step_callback)
+            Y_final = Y.eval()
 
-        t = time.time()
-        for i in range(max_iter):
-            if i == exag_iter:
-                sess.run(tf.assign(mom_var, final_momentum))
-                sess.run(tf.assign(exag_var, 1.))
+        else:
+            zero_mean = tf.assign(Y, Y-tf.reduce_mean(Y, axis=0))
 
-            update.run()
+            if optimizer == 'tensorflow':
+                opt = getattr(tf.train, tf_optimizer)(learning_rate=lr)
+                update = opt.minimize(loss, var_list=[Y])
+            else:
+                mom_var = tf.Variable(init_momentum)
 
-            if i % print_iter == 0:
-                kl = loss.eval()
-                result['loss'].append(kl)
-                if verbose:
-                    print('Error: %f (%d iter. in %f seconds)' % (kl, print_iter, (time.time()-t)))
-                    t = time.time()
-                if save_snapshots:
-                    result['snapshots'].append(Y.eval())
-        Y_final = Y.eval()
+                uY = tf.Variable(tf.zeros((N, dim)))
+                gains = tf.Variable(tf.ones((N, dim)))
+                dY = tf.gradients(loss, [Y])[0]
+
+                gains = tf.assign(gains, tf.where(tf.equal(tf.sign(dY), tf.sign(uY)),
+                                                  gains * .8, gains + .2))
+                gains = tf.assign(gains, tf.maximum(gains, 0.01))
+                uY = tf.assign(uY, mom_var*uY - lr*gains*dY)
+
+                update = tf.assign_add(Y, uY)
+
+            tf.global_variables_initializer().run()
+
+            t = time.time()
+            for i in range(1, max_iter+1):
+                if i == exag_iter:
+                    if optimizer == 'momentum': sess.run(tf.assign(mom_var, final_momentum))
+                    sess.run(tf.assign(exag_var, 1.))
+
+                sess.run(update)
+                sess.run(zero_mean)
+
+                if i % print_iter == 0:
+                    kl = loss.eval()
+                    result['loss'].append(kl)
+                    if verbose:
+                        print('Step: %d, error: %f (in %f sec.)' % (i, kl, (time.time()-t)))
+                        t = time.time()
+                    if save_snapshots:
+                        result['snapshots'].append(Y.eval())
+            Y_final = Y.eval()
 
     result['Y'] = Y_final
     return result
