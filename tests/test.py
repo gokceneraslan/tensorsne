@@ -67,7 +67,7 @@ def test_kl():
     X, y, X_test, y_test = get_mnist(N, N_test, True, D)
 
     P = x2p(X, perplexity, method='knn')
-    Y = np.random.normal(0, 1e-1, (N, Dlow))
+    Y = np.random.normal(0, 1e-1, (N, Dlow)).astype(X.dtype)
 
     kl1 = KL(P.toarray(), Y)
     kl2 = KLsparse(P.indptr, P.indices, P.data, Y, 0.1)
