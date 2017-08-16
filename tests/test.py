@@ -13,15 +13,15 @@ from keras.datasets import mnist
 from sklearn.decomposition import PCA
 
 
-def get_mnist(n_train=5000, n_test=500, pca=True, d=50):
+def get_mnist(n_train=5000, n_test=500, pca=True, d=50, dtype=np.float32):
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
     n, row, col = X_train.shape
     channel = 1
 
     X_train = X_train.reshape(-1, channel * row * col)
     X_test = X_test.reshape(-1, channel * row * col)
-    X_train = X_train.astype('float32')
-    X_test = X_test.astype('float32')
+    X_train = X_train.astype(dtype)
+    X_test = X_test.astype(dtype)
     X_train /= 255
     X_test /= 255
 
@@ -107,7 +107,7 @@ def test_tensorflow():
 
     # test tsne_op
     P = x2p(X, perplexity, method='exact')
-    Y = np.random.normal(0, 1e-4, (N, Dlow)).astype(np.float32)
+    Y = np.random.normal(0, 1e-4, (N, Dlow)).astype(P.dtype)
     kl1 = KL(P, Y)
     klgrad1 = gradKL(P, Y)
 
@@ -126,7 +126,7 @@ def test_tensorflow():
 
     # test tsne_sparse_op
     P = x2p(X, perplexity, method='knn')
-    Y = np.random.normal(0, 1e-4, (N, Dlow)).astype(np.float32)
+    Y = np.random.normal(0, 1e-4, (N, Dlow)).astype(P.dtype)
     kl1 = KLsparse(P.indptr, P.indices, P.data, Y)
     klgrad1 = gradKLsparse(P.indptr, P.indices, P.data, Y)
 
@@ -171,6 +171,14 @@ def test_tsne():
     X, _, _, _ = get_mnist(N, N_test, False)
     res = tsne(X, dim=2, perplexity=perplexity, verbose=True,
                save_snapshots=True)
+
+    assert res['loss'][-1] < 0.5
+    assert res['Y'].shape[0] == N
+    assert res['Y'].shape[1] == 2
+
+    # test double precision
+    res = tsne(X.astype(np.float64), dim=2, perplexity=perplexity,
+            verbose=True, save_snapshots=True)
 
     assert res['loss'][-1] < 0.5
     assert res['Y'].shape[0] == N

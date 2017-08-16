@@ -42,7 +42,7 @@ cdef class BH_SNE:
         P += P.T
         P /= P.sum()
 
-        return P.astype(np.float32)
+        return P
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -65,7 +65,7 @@ cdef class BH_SNE:
         P += P.T
         P /= P.sum()
 
-        return P.astype(np.float32)
+        return P
 
 
     def tuple2sparse(self, rows, cols, data):
@@ -98,7 +98,7 @@ cdef class BH_SNE:
 
         self.thisptr.computeExactGradient(&_P[0,0], &_Y[0,0], N, D, &dY[0,0])
 
-        return dY.astype(np.float32)
+        return dY
 
 
     @cython.boundscheck(False)
@@ -121,7 +121,7 @@ cdef class BH_SNE:
                                      &_data[0],
                                      &_Y[0,0], N, D, &dY[0,0], theta)
 
-        return dY.astype(np.float32)
+        return dY
 
 
     @cython.boundscheck(False)
@@ -135,7 +135,7 @@ cdef class BH_SNE:
 
         err = self.thisptr.evaluateError(&_P[0,0], &_Y[0,0], N, D)
 
-        return np.float32(err)
+        return err
 
 
     @cython.boundscheck(False)
@@ -155,5 +155,5 @@ cdef class BH_SNE:
                                           &_data[0],
                                           &_Y[0,0], N, D, theta)
 
-        return np.float32(err)
+        return err
 

@@ -7,11 +7,11 @@ from .knn import knn
 
 def x2p(X, perplexity=50, method='exact', approx_method='vptree',
         verbose=False):
-
     assert method in ('exact', 'knn', 'approx'), 'Invalid method'
 
     # zero mean
-    X = (X - X.mean(axis=0))
+    X -= X.mean(axis=0)
+    dtype = X.dtype
 
     if method == 'exact':
         assert isinstance(X, np.ndarray), 'Exact method requires dense array'
@@ -22,7 +22,7 @@ def x2p(X, perplexity=50, method='exact', approx_method='vptree',
     else:
         P = __x2p_approx(X, perplexity, method=approx_method, verbose=verbose)
 
-    return P
+    return P.astype(dtype)
 
 
 def __x2p_approx(X, perplexity=50, method='vptree', verbose=False):
@@ -56,7 +56,7 @@ def __find_betas(D, perplexity=50, tol=1e-5, print_iter=1000, max_tries=50, verb
 
     N = D.shape[0]
     k = D.shape[1]
-    P = np.zeros((N, k), dtype=np.float32)
+    P = np.zeros((N, k), dtype=D.dtype)
     beta = np.ones(N)
     logU = np.log(perplexity)
 
