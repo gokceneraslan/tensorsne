@@ -26,5 +26,5 @@ def knn(data, k=50, method='vptree', verbose=False):
     distances = np.vstack(x[1][1:] for x in neig)
 
     # two N x k matrices
-    return distances, indices
+    return distances.astype(data.dtype), indices
 
