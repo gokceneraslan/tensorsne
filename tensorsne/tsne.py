@@ -71,8 +71,9 @@ def tsne(X,
             result['loss'].append(err)
 
         stddev = 1 if optimizer == 'bfgs' else 0.01
-        Y = tf.Variable(tf.random_normal((N, dim), stddev=stddev))
-        exag_var = tf.Variable(exag)
+        Y = tf.Variable(tf.random_normal((N, dim),
+                                         stddev=stddev, dtype=X.dtype))
+        exag_var = tf.Variable(exag, dtype=P.dtype)
 
         if isinstance(P, sp.sparse.csr_matrix):
             loss = tsne_op((P.indptr, P.indices, P.data*exag_var), Y)
@@ -96,14 +97,15 @@ def tsne(X,
                 opt = getattr(tf.train, tf_optimizer)(learning_rate=lr)
                 update = opt.minimize(loss, var_list=[Y])
             else:
-                mom_var = tf.Variable(init_momentum)
-
-                uY = tf.Variable(tf.zeros((N, dim)))
-                gains = tf.Variable(tf.ones((N, dim)))
+                mom_var = tf.Variable(init_momentum, dtype=X.dtype)
+                uY = tf.Variable(tf.zeros((N, dim), dtype=X.dtype))
+                gains = tf.Variable(tf.ones((N, dim), dtype=X.dtype))
                 dY = tf.gradients(loss, [Y])[0]
 
-                gains = tf.assign(gains, tf.where(tf.equal(tf.sign(dY), tf.sign(uY)),
-                                                  gains * .8, gains + .2))
+                gains = tf.assign(gains,
+                                  tf.where(tf.equal(tf.sign(dY), tf.sign(uY)),
+                                                    gains * .8, gains + .2))
+
                 gains = tf.assign(gains, tf.maximum(gains, 0.01))
                 uY = tf.assign(uY, mom_var*uY - lr*gains*dY)
 
