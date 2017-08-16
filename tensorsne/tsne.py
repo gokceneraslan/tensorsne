@@ -59,7 +59,7 @@ def tsne(X,
             if step % print_iter == 0:
                 print('Step: %d, error: %f' %(step, result['loss'][-1]))
                 if save_snapshots:
-                    result['snapshots'].append(Y_var.reshape((N, dim)))
+                    result['snapshots'].append(Y_var.reshape((N, dim)).copy())
             if step == exag_iter:
                 sess.run(tf.assign(exag_var, 1.))
 
