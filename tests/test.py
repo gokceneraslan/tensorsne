@@ -184,3 +184,12 @@ def test_tsne():
     assert res['Y'].shape[0] == N
     assert res['Y'].shape[1] == 2
 
+
+    # test bfgs
+    res = tsne(X.astype(np.float64), dim=2, perplexity=perplexity,
+            verbose=True, save_snapshots=True, optimizer='bfgs', exag=1.)
+
+    assert res['loss'][-1] < 0.5
+    assert res['Y'].shape[0] == N
+    assert res['Y'].shape[1] == 2
+
