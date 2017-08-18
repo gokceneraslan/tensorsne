@@ -57,7 +57,7 @@ def tsne(X,
         def step_callback(Y_var):
             nonlocal step
             if step % print_iter == 0:
-                print('Step: %d, error: %f' %(step, result['loss'][-1]))
+                print('Step: %d, error: %.16f' %(step, result['loss'][-1]))
                 if save_snapshots:
                     result['snapshots'].append(Y_var.reshape((N, dim)).copy())
             if step == exag_iter:
@@ -70,7 +70,7 @@ def tsne(X,
         def loss_callback(err):
             result['loss'].append(err)
 
-        stddev = 1 if optimizer == 'bfgs' else 0.01
+        stddev = 1. if optimizer == 'bfgs' else 0.01
         Y = tf.Variable(tf.random_normal((N, dim),
                                          stddev=stddev, dtype=X.dtype))
         exag_var = tf.Variable(exag, dtype=P.dtype)
@@ -82,9 +82,10 @@ def tsne(X,
 
         if optimizer == 'bfgs':
             opt = ScipyOptimizerInterface(loss, var_list=[Y], method='L-BFGS-B',
-                                          options={'eps': 1., 'gtol': 1e-16,
-                                                   'ftol': 1e-16, 'disp': False,
-                                                   'maxiter': max_iter})
+                                          options={'eps': 1., 'gtol': 0.,
+                                                   'ftol': 0., 'disp': False,
+                                                   'maxiter': max_iter,
+                                                   'maxls': 100})
             tf.global_variables_initializer().run()
             opt.minimize(sess, fetches=[loss],
                          loss_callback=loss_callback, step_callback=step_callback)
