@@ -5,9 +5,8 @@ from ._cpp import BH_SNE
 from .knn import knn
 
 
-def x2p(X, perplexity=50, method='exact', approx_method='vptree',
-        verbose=False):
-    assert method in ('exact', 'knn', 'approx'), 'Invalid method'
+def x2p(X, perplexity=50, method='parallel', verbose=False):
+    assert method in ('exact', 'knn', 'parallel', 'approx'), 'Invalid method'
 
     # zero mean
     X -= X.mean(axis=0)
@@ -19,13 +18,16 @@ def x2p(X, perplexity=50, method='exact', approx_method='vptree',
     elif method == 'knn':
         assert isinstance(X, np.ndarray), 'knn method requires dense array'
         P = BH_SNE().computeGaussianPerplexity(X, perplexity)
+    elif method == 'parallel':
+        assert isinstance(X, np.ndarray), 'knn method requires dense array'
+        P = __x2p_approx(X, perplexity, method='sklearn', verbose=verbose)
     else:
-        P = __x2p_approx(X, perplexity, method=approx_method, verbose=verbose)
+        P = __x2p_approx(X, perplexity, method='nmslib', verbose=verbose)
 
     return P.astype(dtype)
 
 
-def __x2p_approx(X, perplexity=50, method='vptree', verbose=False):
+def __x2p_approx(X, perplexity=50, method='sklearn', verbose=False):
     k = 3 * perplexity
     N = X.shape[0]
 
@@ -46,7 +48,9 @@ def __x2p_approx(X, perplexity=50, method='vptree', verbose=False):
     return P
 
 
-def __find_betas(D, perplexity=50, tol=1e-5, print_iter=1000, max_tries=50, verbose=False):
+def __find_betas(D, perplexity=50, tol=1e-5,
+        print_iter=10000, max_tries=50, verbose=False):
+
     def Hbeta(D, beta):
         P = np.exp(-D * beta)
         sumP = np.sum(P) + np.finfo(D.dtype).tiny
