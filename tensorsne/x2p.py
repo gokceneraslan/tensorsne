@@ -49,7 +49,7 @@ def __x2p_approx(X, perplexity=50, method='vptree', verbose=False):
 def __find_betas(D, perplexity=50, tol=1e-5, print_iter=1000, max_tries=50, verbose=False):
     def Hbeta(D, beta):
         P = np.exp(-D * beta)
-        sumP = np.sum(P)
+        sumP = np.sum(P) + np.finfo(D.dtype).tiny
         H = np.log(sumP) + beta * np.sum((D * P)) / sumP
         P = P / sumP
         return H, P
