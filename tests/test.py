@@ -52,9 +52,11 @@ def test_x2p():
     P1 = x2p(X, perplexity, method='exact')
     P2 = x2p(X, perplexity, method='knn')
     P3 = x2p(X, perplexity, method='approx')
+    P4 = x2p(X, perplexity, method='parallel')
 
     assert np.mean(np.argmax(P1, axis=0) == np.argmax(P2, axis=0)) > 0.95
     assert np.mean(np.argmax(P2, axis=0) == np.argmax(P3, axis=0)) > 0.99
+    assert np.allclose(P2.toarray(), P4.toarray())
 
 
 def test_kl():
