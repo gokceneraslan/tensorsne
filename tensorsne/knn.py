@@ -13,7 +13,10 @@ def knn(data, k=50, method='sklearn', verbose=False):
         return __knn_nmslib(data, k, verbose=verbose)
 
 
-def __knn_nmslib(data, k=50, method='vptree', verbose=False):
+def __knn_nmslib(data, k=50, method='vptree', verbose=False, **kwargs):
+
+    # see https://github.com/searchivarius/nmslib/issues/230
+    data = np.ascontiguousarray(data)
 
     if isinstance(data, sp.sparse.csr_matrix):
         space = 'l2_sparse'
@@ -24,7 +27,7 @@ def __knn_nmslib(data, k=50, method='vptree', verbose=False):
 
     index = nmslib.init(method=method, space=space, data_type=data_type)
     index.addDataPointBatch(data)
-    index.createIndex(print_progress=verbose)
+    index.createIndex(print_progress=verbose, **kwargs)
 
     if verbose:
         print('knn: Indexing done.')
@@ -40,9 +43,10 @@ def __knn_nmslib(data, k=50, method='vptree', verbose=False):
     return distances.astype(data.dtype), indices
 
 
-def __knn_sklearn(X, k, n_jobs=-1, leaf_size=30, verbose=False):
+def __knn_sklearn(X, k, n_jobs=-1, verbose=False, **kwargs):
 
-    nn = NearestNeighbors(n_neighbors=k+1, leaf_size=leaf_size, n_jobs=n_jobs)
+    nn = NearestNeighbors(n_neighbors=k+1, n_jobs=n_jobs,
+                          algorithm='ball_tree', **kwargs)
     nn.fit(X)
 
     if verbose:
