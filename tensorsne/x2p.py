@@ -5,7 +5,7 @@ from ._cpp import BH_SNE
 from .knn import knn
 
 
-def x2p(X, perplexity=50, method='parallel', verbose=False):
+def x2p(X, perplexity=50, method='parallel', verbose=False, **kwargs):
     assert method in ('exact', 'knn', 'parallel', 'approx'), 'Invalid method'
 
     # zero mean
@@ -20,18 +20,20 @@ def x2p(X, perplexity=50, method='parallel', verbose=False):
         P = BH_SNE().computeGaussianPerplexity(X, perplexity)
     elif method == 'parallel':
         assert isinstance(X, np.ndarray), 'knn method requires dense array'
-        P = __x2p_approx(X, perplexity, method='sklearn', verbose=verbose)
+        P = __x2p_approx(X, perplexity, method='sklearn',
+                         verbose=verbose, **kwargs)
     else:
-        P = __x2p_approx(X, perplexity, method='nmslib', verbose=verbose)
+        P = __x2p_approx(X, perplexity, method='nmslib', verbose=verbose,
+                         **kwargs)
 
     return P.astype(dtype)
 
 
-def __x2p_approx(X, perplexity=50, method='sklearn', verbose=False):
+def __x2p_approx(X, perplexity=50, method='sklearn', verbose=False, **kwargs):
     k = 3 * perplexity
     N = X.shape[0]
 
-    distances, indices = knn(X, k, method=method, verbose=verbose)
+    distances, indices = knn(X, k, method=method, verbose=verbose, **kwargs)
 
     if verbose:
         print('Finding beta and P...')

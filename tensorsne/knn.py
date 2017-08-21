@@ -4,7 +4,7 @@ import scipy as sp
 from sklearn.neighbors import NearestNeighbors
 
 
-def knn(data, k=50, method='sklearn', verbose=False):
+def knn(data, k=50, method='sklearn', verbose=False, **kwargs):
     assert method in ('sklearn', 'nmslib'), 'No such knn method'
 
     if method == 'sklearn':
