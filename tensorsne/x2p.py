@@ -5,8 +5,8 @@ from ._cpp import BH_SNE
 from .knn import knn
 
 
-def x2p(X, perplexity=50, method='parallel', verbose=False, **kwargs):
-    assert method in ('exact', 'knn', 'parallel', 'approx'), 'Invalid method'
+def x2p(X, perplexity=50, method='knnparallel', verbose=False, **kwargs):
+    assert method in ('exact', 'knncpp', 'knnparallel', 'knnsklearn'), 'Invalid method'
 
     # zero mean
     X -= X.mean(axis=0)
@@ -15,16 +15,16 @@ def x2p(X, perplexity=50, method='parallel', verbose=False, **kwargs):
     if method == 'exact':
         assert isinstance(X, np.ndarray), 'Exact method requires dense array'
         P = BH_SNE().computeGaussianPerplexityExact(X, perplexity)
-    elif method == 'knn':
+    elif method == 'knncpp':
         assert isinstance(X, np.ndarray), 'knn method requires dense array'
         P = BH_SNE().computeGaussianPerplexity(X, perplexity)
-    elif method == 'parallel':
+    elif method == 'knnparallel':
+        P = __x2p_approx(X, perplexity, method='nmslib', verbose=verbose,
+                         **kwargs)
+    else:
         assert isinstance(X, np.ndarray), 'knn method requires dense array'
         P = __x2p_approx(X, perplexity, method='sklearn',
                          verbose=verbose, **kwargs)
-    else:
-        P = __x2p_approx(X, perplexity, method='nmslib', verbose=verbose,
-                         **kwargs)
 
     return P.astype(dtype)
 
