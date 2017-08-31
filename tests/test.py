@@ -50,9 +50,9 @@ def test_x2p():
     X, y, X_test, y_test = get_mnist(N, N_test, True, D)
 
     P1 = x2p(X, perplexity, method='exact')
-    P2 = x2p(X, perplexity, method='knn')
-    P3 = x2p(X, perplexity, method='approx')
-    P4 = x2p(X, perplexity, method='parallel')
+    P2 = x2p(X, perplexity, method='knnparallel')
+    P3 = x2p(X, perplexity, method='knncpp')
+    P4 = x2p(X, perplexity, method='knnsklearn')
 
     assert np.mean(np.argmax(P1, axis=0) == np.argmax(P2, axis=0)) > 0.95
     assert np.allclose(P2.toarray(), P3.toarray())
@@ -68,7 +68,7 @@ def test_kl():
 
     X, y, X_test, y_test = get_mnist(N, N_test, True, D)
 
-    P = x2p(X, perplexity, method='knn')
+    P = x2p(X, perplexity)
     Y = np.random.normal(0, 1e-1, (N, Dlow)).astype(X.dtype)
 
     kl1 = KL(P.toarray(), Y)
@@ -127,7 +127,7 @@ def test_tensorflow():
     assert np.allclose(klgrad1, klgrad2)
 
     # test tsne_sparse_op
-    P = x2p(X, perplexity, method='knn')
+    P = x2p(X, perplexity)
     Y = np.random.normal(0, 1e-4, (N, Dlow)).astype(P.dtype)
     kl1 = KLsparse(P.indptr, P.indices, P.data, Y)
     klgrad1 = gradKLsparse(P.indptr, P.indices, P.data, Y)
