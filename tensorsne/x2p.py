@@ -69,7 +69,7 @@ def __find_betas(D, perplexity=50, tol=1e-5,
     N = D.shape[0]
     k = D.shape[1]
     P = np.zeros((N, k), dtype=D.dtype)
-    beta = np.ones(N)
+    beta = np.ones(N, dtype=D.dtype)
     logU = np.log(perplexity)
 
     if verbose:

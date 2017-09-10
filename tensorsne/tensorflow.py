@@ -1,4 +1,5 @@
 from .kl import KL, gradKL, KLsparse, gradKLsparse
+from .x2p import x2p, __find_betas
 
 import numpy as np
 import scipy as sp
@@ -44,3 +45,37 @@ def tsne_op(P, Y, theta=0.5, name=None):
     op.set_shape((1,))
     return op
 
+
+def __knn_bruteforce(X, k=50):
+    # calculate euclidean distances
+    r = tf.reduce_sum(X*X, 1)
+    r = tf.reshape(r, [-1, 1])
+    D = r - 2*tf.matmul(X, tf.transpose(X)) + tf.transpose(r)
+    D = tf.matrix_set_diag(D, tf.constant(1e32, dtype=X.dtype,
+                           shape=(X.shape[0],)))
+    D = tf.sqrt(D)
+
+    #find kNNs
+    distances, indices = tf.nn.top_k(-D, k)
+    return -distances, indices
+
+
+def __find_betas_op(D, perplexity=50, name=None):
+
+    P, beta = tf.py_func(__find_betas, [D, perplexity],
+                         [D.dtype, D.dtype], name=name)
+
+    P.set_shape(D.shape)
+    beta.set_shape([D.shape[0],])
+
+    return P, beta
+
+
+def x2p_op(X, perplexity=50):
+    k = 3 * perplexity
+    N = X.shape[0]
+
+    distances, indices = __knn_bruteforce(X, k)
+    P, beta = __find_betas_op(tf.square(distances), perplexity)
+
+    return P
