@@ -5,11 +5,14 @@ from ._cpp import BH_SNE
 from .knn import knn
 
 
-def x2p(X, perplexity=50, method='knnparallel', verbose=False, **kwargs):
+def x2p(X, perplexity=50, method='knnparallel', center=True,
+        verbose=False, returntuple=False, **kwargs):
     assert method in ('exact', 'knncpp', 'knnparallel', 'knnsklearn'), 'Invalid method'
 
-    # zero mean
-    X -= X.mean(axis=0)
+    if center:
+        # zero mean
+        X -= X.mean(axis=0)
+
     dtype = X.dtype
 
     if method == 'exact':
@@ -26,7 +29,10 @@ def x2p(X, perplexity=50, method='knnparallel', verbose=False, **kwargs):
         P = __x2p_approx(X, perplexity, method='sklearn',
                          verbose=verbose, **kwargs)
 
-    return P.astype(dtype)
+    if method != 'exact' and returntuple:
+        return P.indptr, P.indices, P.data.astype(dtype)
+    else:
+        return P.astype(dtype)
 
 
 def __x2p_approx(X, perplexity=50, method='sklearn', verbose=False, **kwargs):
